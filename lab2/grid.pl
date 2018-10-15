@@ -27,6 +27,12 @@ grid(Xs):- findall(cell(C,X,Y), cell(C,X,Y), Xs).
 get_cell_from_name(N, X) :-
   findall(cell(A,B,C), (cell(A,B,C), A = N), [X]).
 
+east(A, B):- cell(A,X,_), cell(B,X2,_), X2 > X.
+/*
+?- east(a, b).
+true.
+*/
+
 east(cell(_,X,_), cell(_,X2,_)):- X2 > X.
 /*
 ?- east(cell(a,0,0), cell(c,2,0)).
