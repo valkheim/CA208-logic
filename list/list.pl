@@ -101,6 +101,12 @@ reverse_list_aux([],Z,Z).
 
 reverse_list(L, X):- reverse_list_aux(L, X, []).
 
-
 /* delete */
+del_elem(_, [], []).
+del_elem(X, [X|L1], L2):-
+  del_elem(X, L1, L2), !.
+del_elem(X, [H|L1], [H|L2]):-
+  del_elem(X, L1, L2),
+  X \== H.
+
 /* delete at */
