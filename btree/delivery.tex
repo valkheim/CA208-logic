@@ -1,0 +1,227 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{dirtree} % introduction directory tree
+\usepackage{minted} % syntax highlight with minted
+\usepackage[most, minted]{tcolorbox}
+\usepackage{etoolbox} % box to minted
+
+% myminted env adapted from https://tex.stackexchange.com/questions/396723/minted-line-number-overlapped-by-tcolorbox-frame
+\newtcblisting{myminted}{%
+    listing engine=minted,
+    minted language=prolog,
+    listing only,
+    breakable,
+    enhanced,
+    minted options = {
+        linenos,% line numbers
+        breaklines=true,
+        breakbefore=.,
+        fontsize=\footnotesize,
+        numbersep=2mm
+    },
+    overlay={% grey box for lineos
+        \begin{tcbclipinterior}
+            \fill[gray!25] (frame.south west) rectangle ([xshift=4mm]frame.north west);
+        \end{tcbclipinterior}
+    }
+}
+
+% Add colored box to minted env
+\BeforeBeginEnvironment{minted}{%
+  \begin{tcolorbox}[breakable, enhanced]}%
+\AfterEndEnvironment{minted}{\end{tcolorbox}}%
+
+\begin{document}
+
+\Large
+\begin{center}
+  CA208 Assignment 2, binary trees\\
+  \hspace{10pt}
+
+  \large
+  Charles PAULET \\
+  \hspace{10pt}
+
+  \small
+  charles.paulet2@mail.dcu.ie \\
+  ECSAOO 18103197 \\
+  \bigbreak
+
+  \today
+\end{center}
+\hspace{10pt}
+
+\normalsize
+Cheating is bad 'mkay.
+
+\newpage
+
+\section*{Introduction}
+
+This archive contains multiple documents :
+\medbreak
+\dirtree{%
+.1 bt.pl : binary tree prolog sources.
+.1 bt.plt : binary tree prolog tests (plunit).
+.1 run\_tests.sh : script to start the tests.
+.1 delivery.tex : this document source file.
+.1 delivery.tex : this document.
+.1 Makefile : script to compile delivery.tex.
+}
+
+\section*{Exercices}
+  \subsection*{emptyBT}
+    An empty binary tree matches \mintinline{prolog}{nil} and the \mintinline{prolog}{nil}-root
+    value node \mintinline{prolog}{bTree(nil,nil,nil)}.
+
+    \begin{minted}{prolog}
+emptyBT():- !.
+emptyBT(nil):- !.
+emptyBT(bTree(nil,nil,nil)).
+    \end{minted}
+  \subsection*{bTree(N,T1,T2)}
+    A binary tree is defined as \mintinline{prolog}{bTree(N,T1,T2)} where N is
+    the value of the node \mintinline{prolog}{bTree} and where \mintinline{prolog}{T1} and  \mintinline{prolog}{T2} are
+    respectively the left and the right leaf of the node. \mintinline{prolog}{T1 @=< N} and \mintinline{prolog}{T2 @> N}.
+    The \mintinline{prolog}{@} in the operator means it applies for the Standard Order of Terms \footnote{http://www.swi-prolog.org/pldoc/man?section=standardorder}.\\
+    To be valid, I consider that the node value cannot be \mintinline{prolog}{nil}. \mintinline{prolog}{T1} and  \mintinline{prolog}{T2} might
+    be subtrees, we should match it.
+
+    \begin{minted}{prolog}
+bTree(N, nil, nil):- N \= nil.
+bTree(N, bTree(LN,LL,LR), nil):- /* left subtree only */
+  N \== nil,
+  N @>= LN,
+  bTree(LN,LL,LR),!.
+bTree(N, nil, bTree(RN,RL,RR)):- /* right subtree only */
+  N \== nil,
+  N @< RN,
+  bTree(RN,RL,RR),!.
+bTree(N, bTree(LN,LL,LR), bTree(RN,RL,RR)):- /* subtrees */
+  N \== nil,
+  N @>= LN, N @< RN,
+  bTree(LN,LL,LR),
+  bTree(RN,RL,RR),!.
+    \end{minted}
+
+  \subsection*{inorder(T,L)}
+    Inorder traversal is reading data from the bottom left to the bottom right.
+    I manage to follow these steps :
+    \begin{enumerate}
+      \item check is current node is \mintinline{prolog}{nil}.
+      \item traverse the left subtree \mintinline{prolog}{T1}.
+      \item store the bottom left node value.
+      \item traverse the right subtree \mintinline{prolog}{T2}.
+      \item store the bottom right node value.
+    \end{enumerate}
+    In order to respect the rule head \mintinline{prolog}{inorder(T,L)}, I added an auxialiary function.
+    \begin{minted}{prolog}
+inorder(T,L):-inorder_(T,L),!.
+inorder_(nil,[]).
+inorder_(bTree(N,T1,T2),List):-
+  inorder_(T1,L1),
+  merge_list(L1,[N],T),
+  inorder_(T2,L2),
+  merge_list(T,L2,List).
+    \end{minted}
+
+  \subsection*{postorder(T,L)}
+    \begin{enumerate}
+      \item check is current node is \mintinline{prolog}{nil}.
+      \item traverse the left subtree \mintinline{prolog}{T1}.
+      \item traverse the right subtree \mintinline{prolog}{T2}.
+      \item store the node value.
+    \end{enumerate}
+
+    \begin{minted}{prolog}
+postorder(T,L):-postorder_(T,L),!.
+postorder_(nil,[]).
+postorder_(bTree(N,T1,T2),List):-
+  postorder_(T1,L1),
+  postorder_(T2,L2),
+  merge_list(Tmp,[N],List),
+  merge_list(L1,L2,Tmp),!.
+    \end{minted}
+
+  \subsection*{preorder(T,L)}
+    \begin{enumerate}
+      \item check is current node is \mintinline{prolog}{nil}.
+      \item store the node value.
+      \item traverse the left subtree \mintinline{prolog}{T1}.
+      \item traverse the right subtree \mintinline{prolog}{T2}.
+    \end{enumerate}
+
+    \begin{minted}{prolog}
+preorder(T,L):-preorder_(T,L),!.
+preorder_(nil,[]).
+preorder_(bTree(N,T1,T2),[N|T]):-
+  preorder_(T1,LT),
+  merge_list(LT,RT,T),
+  preorder_(T2,RT).
+    \end{minted}
+
+  \subsection*{search(T,I)}
+    In order to verify that element \mintinline{prolog}{I} belongs to tree \mintinline{prolog}{T}, I must
+    traverse the tree, and find a match on \mintinline{prolog}{I} with the node value as in \mintinline{prolog}{search_(bTree(I,_,_),I):-!.}
+    \begin{minted}{prolog}
+search(T,I):- search_(T, I),!.
+search_(bTree(I,_,_),I):-!.
+search_(bTree(_,LL,_),I):-
+  search(LL,I).
+search_(bTree(_,_,LR),I):-
+  search(LR,I).
+    \end{minted}
+
+  \subsection*{height(T,H)}
+    The height of an empty tree is zero, the height of a one-node tree is 1.
+    The general case is the height of the tallest subtree. So we can sum 0 and 1s.
+    Hence, the height of the tree is \mintinline{prolog}{max(H1,H2,M)} where \mintinline{prolog}{H1} is the
+    height of the left subtree, \mintinline{prolog}{H2} is the height of the right subtree and \mintinline{prolog}{M},
+    the maximum between those two heights. \\
+    I also used an auxiliary function to match the required rule head.
+    \begin{minted}{prolog}
+height(T,H):-height_(T,H),!.
+height_(nil,0).
+height_(bTree(nil,_,_),0):-!.
+height_(bTree(_,nil,nil),1):-!.
+height_(bTree(_,LL,LR),H):-
+  height_(LL,H1),
+  height_(LR,H2),
+  max(H1,H2,M),
+  H is 1 + M.
+    \end{minted}
+
+  \subsection*{insert(I,T1,T2)}
+
+    \mintinline{prolog}{T2} is the binary tree \mintinline{prolog}{T1 + I}.
+    We should find the right node of \mintinline{prolog}{T1} where to append a new node
+    containing \mintinline{prolog}{I}. We can compare the value to be inserted with the value of the current node
+    and go as far as possible. When we'll reach this position, we can insert the new node \mintinline{prolog}{bTree(I,nil,nil)}.
+    \begin{minted}{prolog}
+insert(I,T1,T2):-insert_(I,T1,T2),!.
+insert_(nil,I,bTree(I,nil,nil)):-!. /* new node */
+insert_(I,bTree(I,T1,T2),bTree(I,T1,T2)).
+insert_(I,bTree(N,T1,T2),bTree(N,NL,T2)):-
+  I @=< N,
+  insert_(T1,I,NL),!. /* insert at left */
+insert_(I,bTree(N,T1,T2),bTree(N,T1,NR)):-
+  I @> N,
+  insert_(T2,I,NR). /* insert at right */
+    \end{minted}
+
+    Here is a simple trace where we insert a left node (again, I used an auxiliary function so there is \mintinline{prolog}{insert} and \mintinline{prolog}{insert_} duplicated lines).
+    \begin{myminted}
+    ?- trace, insert(2, bTree(5,nil,nil), bTree(5, bTree(2, nil, nil), nil)).
+   Call: (9) insert(2, bTree(5, nil, nil), bTree(5, bTree(2, nil, nil), nil)) ? creep
+   Call: (10) insert_(2, bTree(5, nil, nil), bTree(5, bTree(2, nil, nil), nil)) ? creep
+   Call: (11) 2@=<5 ? creep
+   Exit: (11) 2@=<5 ? creep
+   Call: (11) insert_(nil, 2, bTree(2, nil, nil)) ? creep
+   Exit: (11) insert_(nil, 2, bTree(2, nil, nil)) ? creep
+   Exit: (10) insert_(2, bTree(5, nil, nil), bTree(5, bTree(2, nil, nil), nil)) ? creep
+   Exit: (9) insert(2, bTree(5, nil, nil), bTree(5, bTree(2, nil, nil), nil)) ? creep
+true.
+    \end{myminted}
+
+\end{document}
