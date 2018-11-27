@@ -107,7 +107,7 @@ insert_(nil,I,bTree(I,nil,nil)):-!. /* new node */
 insert_(I,bTree(I,T1,T2),bTree(I,T1,T2)).
 insert_(I,bTree(N,T1,T2),bTree(N,NL,T2)):-
   I @=< N,
-  insert_(T1,I,NL),!. /* insert at left */
+  insert_(T1,I,NL). /* insert at left */
 insert_(I,bTree(N,T1,T2),bTree(N,T1,NR)):-
   I @> N,
   insert_(T2,I,NR). /* insert at right */
